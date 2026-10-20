@@ -1,14 +1,9 @@
-import React, { useState } from "react";
-import Two from "./Two";
-import Three from "./Three";
-import Four from "./Four";
+import { useState } from "react";
 
 const One = () => {
   const [data, setData] = useState("");
-  const [data1, setData1] = useState("");
   const [item, setItem] = useState([]);
   const [question1, setQuestion1] = useState(false);
-  const [question2, setQuestion2] = useState(false);
   const [error1, setError1] = useState("");
   const handleSubmit = () => {
     if (!data) {

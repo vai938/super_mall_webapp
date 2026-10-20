@@ -1,216 +1,305 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../firebase/firebaseconsole";
+import AdminLayout from "./AdminLayout";
+import { getShopById, updateShop } from "../../services/mallStore";
+import {
+  PlusCircle,
+  Trash2,
+  ArrowLeft,
+  Save,
+  CheckCircle2,
+  Percent,
+} from "lucide-react";
+
+const emptyOffer = () => ({
+  offerName: "",
+  offerDiscription: "",
+  offerReleaseDate: new Date().toISOString().split("T")[0],
+  offerDiscount: "",
+  offerExpier: "",
+  offerOriginalPrice: "",
+  offerDiscountPrice: "",
+});
 
 const AdminShopOffer = () => {
-  const { id: shopId } = useParams(); // Firestore document ID
-  const nav = useNavigate();
-
-  const [inputFields, setInputFields] = useState([
-    {
-      offerName: "",
-      offerDiscription: "",
-      offerReleaseDate: "",
-      offerDiscount: "",
-      offerExpier: "",
-      offerOriginalPrice: "",
-      offerDiscountPrice: "",
-      offerImageUrl: "",
-    },
-  ]);
-
-  // Load existing offers (if any)
-  const fetchShopOffers = async () => {
-    try {
-      const shopRef = doc(db, "shops", shopId);
-      const snapshot = await getDoc(shopRef);
-
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (data.shopOffer && data.shopOffer.length > 0) {
-          setInputFields(data.shopOffer);
-        }
-      } else {
-        alert("Shop not found");
-        nav("/admin");
-      }
-    } catch (err) {
-      console.error("Error fetching shop:", err);
-      alert("Failed to load shop data");
-    }
-  };
+  const { id: shopId } = useParams();
+  const navigate = useNavigate();
+  const [shop, setShop] = useState(null);
+  const [inputFields, setInputFields] = useState([emptyOffer()]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
-    fetchShopOffers();
-  }, []);
+    const fetchShopOffers = async () => {
+      setLoading(true);
+      try {
+        const data = await getShopById(shopId);
+        if (data) {
+          setShop(data);
+          if (data.shopOffer && data.shopOffer.length > 0) {
+            setInputFields(data.shopOffer);
+          }
+        } else {
+          alert("Store not found");
+          navigate("/admin/list_of_all_shop");
+        }
+      } catch (err) {
+        console.error("Error fetching shop offers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Handle input change
+    fetchShopOffers();
+  }, [shopId, navigate]);
+
   const handleInputChange = (index, event) => {
     const { name, value } = event.target;
     const updated = [...inputFields];
     updated[index][name] = value;
+
+    // Auto calculate discount percentage if original and discount price are provided
+    if (name === "offerOriginalPrice" || name === "offerDiscountPrice") {
+      const orig = Number(name === "offerOriginalPrice" ? value : updated[index].offerOriginalPrice);
+      const disc = Number(name === "offerDiscountPrice" ? value : updated[index].offerDiscountPrice);
+      if (orig > 0 && disc > 0 && orig > disc) {
+        const pct = Math.round(((orig - disc) / orig) * 100);
+        updated[index].offerDiscount = `${pct}%`;
+      }
+    }
+
     setInputFields(updated);
   };
 
   const handleAddField = () => {
-    setInputFields([
-      ...inputFields,
-      {
-        offerName: "",
-        offerDiscription: "",
-        offerReleaseDate: "",
-        offerDiscount: "",
-        offerExpier: "",
-        offerOriginalPrice: "",
-        offerDiscountPrice: "",
-        offerImageUrl: "",
-      },
-    ]);
+    setInputFields([...inputFields, emptyOffer()]);
   };
 
   const handleRemoveField = (index) => {
+    if (inputFields.length === 1) {
+      setInputFields([emptyOffer()]);
+      return;
+    }
     const updated = inputFields.filter((_, i) => i !== index);
     setInputFields(updated);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setSaving(true);
+
+    // Filter out completely blank offer rows
+    const cleanedOffers = inputFields.filter(
+      (o) => o.offerName.trim() || o.offerDiscountPrice || o.offerDiscription.trim()
+    );
+
     try {
-      const shopRef = doc(db, "shops", shopId);
-
-      await updateDoc(shopRef, {
-        shopOffer: inputFields,
+      await updateShop(shop.id, {
+        shopOffer: cleanedOffers,
       });
-
-      alert("Offers updated successfully");
-      nav(`/admin/view/${shopId}`);
+      setSavedSuccess(true);
+      setTimeout(() => {
+        navigate(`/admin/view/${shop.id}`);
+      }, 900);
     } catch (err) {
       console.error("Error updating offers:", err);
-      alert("Failed to update offers");
+      alert("Failed to update offers. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  return (
-    <div>
-      <div className="text-center font-mono">
-        <h2>Offer Section</h2>
-      </div>
-
-      <button onClick={() => nav(`/admin/view/${shopId}`)}>Back</button>
-
-      <div className="grid grid-cols-12 font-mono border rounded-md p-4 m-3">
-        <div className="grid col-span-9">
-          {inputFields.map((inputField, index) => (
-            <div
-              className="grid-cols-4 mt-3 grid gap-4 border p-4"
-              key={index}
-            >
-              <div>
-                <label>Offer Name</label>
-                <input
-                  className="border w-full"
-                  type="text"
-                  name="offerName"
-                  value={inputField.offerName}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <div>
-                <label>Description</label>
-                <input
-                  className="border w-full"
-                  type="text"
-                  name="offerDiscription"
-                  value={inputField.offerDiscription}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <div>
-                <label>Discount</label>
-                <input
-                  className="border w-full"
-                  type="text"
-                  name="offerDiscount"
-                  value={inputField.offerDiscount}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <div>
-                <label>Release Date</label>
-                <input
-                  className="border w-full"
-                  type="date"
-                  name="offerReleaseDate"
-                  value={inputField.offerReleaseDate}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <div>
-                <label>Expire Date</label>
-                <input
-                  className="border w-full"
-                  type="date"
-                  name="offerExpier"
-                  value={inputField.offerExpier}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <div>
-                <label>Original Price</label>
-                <input
-                  className="border w-full"
-                  type="text"
-                  name="offerOriginalPrice"
-                  value={inputField.offerOriginalPrice}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <div>
-                <label>Discount Price</label>
-                <input
-                  className="border w-full"
-                  type="text"
-                  name="offerDiscountPrice"
-                  value={inputField.offerDiscountPrice}
-                  onChange={(e) => handleInputChange(index, e)}
-                />
-              </div>
-
-              <button
-                className="bg-red-200 border px-3 py-1"
-                onClick={() => handleRemoveField(index)}
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+  if (loading || !shop) {
+    return (
+      <AdminLayout title="Loading Offer Editor...">
+        <div className="py-20 text-center text-purple-200/70">
+          Loading store promotional data...
         </div>
+      </AdminLayout>
+    );
+  }
 
-        <div className="col-span-3">
+  return (
+    <AdminLayout
+      title={`Manage Offers: ${shop.shopName}`}
+      subtitle={`Unit #${shop.shopNumber} · Floor ${shop.shopFloor}`}
+    >
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Back and Toolbar */}
+        <div className="flex items-center justify-between">
           <button
-            className="bg-purple-200 mt-4 border px-3 py-1"
-            onClick={handleAddField}
+            onClick={() => navigate(`/admin/view/${shop.id}`)}
+            className="glass-button-secondary text-xs py-2 px-3.5 flex items-center gap-2"
           >
-            Add More Offer
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Store Details</span>
+          </button>
+
+          <button
+            onClick={handleAddField}
+            className="glass-button-secondary text-xs py-2 px-3.5 flex items-center gap-2 text-purple-200"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-purple-300" />
+            <span>Add Another Offer</span>
           </button>
         </div>
-      </div>
 
-      <div className="float-right m-4">
-        <button
-          className="bg-green-200 border px-4 py-2"
-          onClick={handleSubmit}
-        >
-          Submit
-        </button>
+        {savedSuccess && (
+          <div className="glass-card p-4 bg-emerald-500/20 border-emerald-500/40 text-emerald-200 flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+            <span className="font-semibold text-sm">
+              Promotions successfully saved! Returning to store profile...
+            </span>
+          </div>
+        )}
+
+        {/* Offer Cards Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {inputFields.map((offer, index) => (
+            <div key={index} className="glass-card p-5 sm:p-6 space-y-4 relative">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center font-mono">
+                    {index + 1}
+                  </span>
+                  <h4 className="font-bold text-white text-sm">
+                    {offer.offerName || `Promotional Offer #${index + 1}`}
+                  </h4>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleRemoveField(index)}
+                  className="text-rose-300 hover:text-white p-1 rounded-lg hover:bg-rose-500/20 text-xs flex items-center gap-1 transition-colors"
+                  title="Remove this offer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Delete</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Offer Name */}
+                <div className="lg:col-span-2">
+                  <label className="block text-xs font-semibold text-purple-200/90 mb-1">
+                    Offer Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="offerName"
+                    placeholder="e.g. Festive Diwali Mega Discount 25%"
+                    className="glass-input text-xs sm:text-sm"
+                    value={offer.offerName}
+                    onChange={(e) => handleInputChange(index, e)}
+                    required
+                  />
+                </div>
+
+                {/* Discount Tag */}
+                <div>
+                  <label className="block text-xs font-semibold text-purple-200/90 mb-1">
+                    Discount Badge
+                  </label>
+                  <div className="relative">
+                    <Percent className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-purple-300/60" />
+                    <input
+                      type="text"
+                      name="offerDiscount"
+                      placeholder="e.g. 25% OFF, BOGO"
+                      className="glass-input pl-8 text-xs sm:text-sm"
+                      value={offer.offerDiscount}
+                      onChange={(e) => handleInputChange(index, e)}
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="lg:col-span-3">
+                  <label className="block text-xs font-semibold text-purple-200/90 mb-1">
+                    Offer Description / Terms
+                  </label>
+                  <textarea
+                    rows={2}
+                    name="offerDiscription"
+                    placeholder="Provide details on included items, applicable conditions, or minimum purchase..."
+                    className="glass-input text-xs sm:text-sm resize-none"
+                    value={offer.offerDiscription}
+                    onChange={(e) => handleInputChange(index, e)}
+                  />
+                </div>
+
+                {/* Original Price */}
+                <div>
+                  <label className="block text-xs font-semibold text-purple-200/90 mb-1">
+                    Original Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    name="offerOriginalPrice"
+                    placeholder="e.g. 2999"
+                    className="glass-input text-xs sm:text-sm"
+                    value={offer.offerOriginalPrice}
+                    onChange={(e) => handleInputChange(index, e)}
+                  />
+                </div>
+
+                {/* Discounted Price */}
+                <div>
+                  <label className="block text-xs font-semibold text-purple-200/90 mb-1">
+                    Discounted / Offer Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    name="offerDiscountPrice"
+                    placeholder="e.g. 1999"
+                    className="glass-input text-xs sm:text-sm"
+                    value={offer.offerDiscountPrice}
+                    onChange={(e) => handleInputChange(index, e)}
+                    required
+                  />
+                </div>
+
+                {/* Expiry Date */}
+                <div>
+                  <label className="block text-xs font-semibold text-purple-200/90 mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    name="offerExpier"
+                    className="glass-input text-xs sm:text-sm"
+                    value={offer.offerExpier}
+                    onChange={(e) => handleInputChange(index, e)}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Action Row */}
+          <div className="glass-card p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleAddField}
+              className="glass-button-secondary w-full sm:w-auto text-xs py-2.5 px-4 flex items-center justify-center gap-2"
+            >
+              <PlusCircle className="w-4 h-4 text-purple-300" />
+              <span>Add Another Offer</span>
+            </button>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="glass-button w-full sm:w-auto text-xs py-2.5 px-6 flex items-center justify-center gap-2 font-bold"
+            >
+              <Save className="w-4 h-4" />
+              <span>{saving ? "Saving Promotions..." : "Save All Promotions"}</span>
+            </button>
+          </div>
+        </form>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

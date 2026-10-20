@@ -6,59 +6,186 @@
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* REMOVE DARK FORCE */
 body {
-    background: linear-gradient(135deg, #3b0764, #6b21a8);
-
-  font-family: Inter, system-ui, sans-serif;
+  background: linear-gradient(135deg, #20063b 0%, #3b0764 45%, #1e1b4b 100%);
+  background-attachment: fixed;
+  color: #ffffff;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* =========================
-   GLASSMORPHISM UTILITIES
-   ========================= */
+/* ========================================================
+   VISTA SQUARE SUPER MALL — PROFESSIONAL COMMERCIAL DESIGN
+   ======================================================== */
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.12);
+.mall-card {
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.35);
+}
+
+.mall-card-hover {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mall-card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.45);
+}
+
+.mall-inner {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mall-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  outline: none;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.mall-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.mall-input:focus {
+  border-color: #a855f7;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.3);
+}
+
+.mall-input option {
+  background-color: #1e1035;
+  color: #ffffff;
+  padding: 8px;
+}
+
+.mall-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  background: #7e22ce;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mall-btn-primary:hover {
+  background: #9333ea;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.mall-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.15s ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mall-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.mall-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.mall-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.45);
+  color: #ffffff;
+}
+
+/* Backward compatibility classes with improved look */
+.glass-card {
+  @apply mall-card;
 }
 
 .glass-input {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  outline: none;
-}
-
-.glass-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.glass-input:focus {
-  border-color: rgba(255, 255, 255, 0.6);
+  @apply mall-input;
 }
 
 .glass-button {
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  transition: all 0.25s ease;
+  @apply mall-btn-primary;
 }
 
-.glass-button:hover {
-  background: rgba(255, 255, 255, 0.35);
+.glass-button-secondary {
+  @apply mall-btn-secondary;
+}
+
+.glass-button-danger {
+  @apply mall-btn-danger;
+}
+
+.glass-inner {
+  @apply mall-inner;
+}
+
+.glass-sub-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.25);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
