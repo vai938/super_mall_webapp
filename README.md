@@ -2,7 +2,8 @@
 
 ### Admin
 
-- Login
+- Login (Admin ID: admin
+         Password: admin123)
 - Create Shop Details
 - Manage Shop Details
 - Manage Offer details
